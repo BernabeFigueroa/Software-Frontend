@@ -7,7 +7,7 @@
  * @param {string} [params.billingAddress] - Dirección de facturación (si no se especifica o está vacía, se usa shippingAddress)
  * @param {string} [params.notes] - Notas o comentarios de entrega
  * @param {Array<{ id: string, quantity: number }>} params.cartItems - Elementos actuales del carrito
- * @returns {{ shippingAddress: string, billingAddress: string, notes: string, items: Array<{ productId: string, quantity: number }> }}
+ * @returns {{ shippingAddress: string, billingAddress: string, notes: string, orderItems: Array<{ productId: string, quantity: number }> }}
  */
 export const buildOrderPayload = ({
   shippingAddress,
@@ -23,7 +23,7 @@ export const buildOrderPayload = ({
     throw new Error('El carrito debe contener al menos un producto para procesar la orden.');
   }
 
-  const items = cartItems.map((item) => {
+  const orderItems = cartItems.map((item) => {
     const productId = item.id || item.productId;
     const quantity = Number(item.quantity);
 
@@ -54,6 +54,6 @@ export const buildOrderPayload = ({
     shippingAddress: cleanShipping,
     billingAddress: cleanBilling,
     notes: (notes && typeof notes === 'string') ? notes.trim() : '',
-    items,
+    orderItems,
   };
 };
