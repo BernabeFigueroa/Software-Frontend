@@ -61,19 +61,58 @@ function OrderDetailPage() {
   };
 
   const handleUpdateStatus = async () => {
-    const statusOptions = {
-      Pending: 'Pendiente',
-      Processing: 'En Proceso',
-      Shipped: 'Enviado',
-      Delivered: 'Entregado',
-      Cancelled: 'Cancelado',
+    // Estados finales - no se pueden cambiar
+    const finalStatuses = ['Delivered', 'Cancelled'];
+    if (finalStatuses.includes(order.status)) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Orden finalizada',
+        text: `Esta orden ya está en estado "${orderStatusLabels[order.status]}" y no puede ser modificada.`,
+        confirmButtonColor: '#3085d6',
+      });
+      return;
+    }
+
+    // Definir transiciones válidas por estado
+    const validTransitions = {
+      Pending: ['Processing', 'Cancelled'],
+      Processing: ['Shipped', 'Cancelled'],
+      Shipped: ['Delivered', 'Cancelled'],
+      Delivered: [],
+      Cancelled: [],
     };
+
+    const allowedStatuses = validTransitions[order.status] || [];
+    
+    // Crear opciones solo con las transiciones válidas
+    const statusOptions = {};
+    allowedStatuses.forEach(status => {
+      const labels = {
+        Pending: 'Pendiente',
+        Processing: 'En Proceso',
+        Shipped: 'Enviado',
+        Delivered: 'Entregado',
+        Cancelled: 'Cancelado',
+      };
+      statusOptions[status] = labels[status];
+    });
+
+    if (allowedStatuses.length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Sin cambios posibles',
+        text: `Esta orden está en estado "${orderStatusLabels[order.status]}" y no puede ser modificada.`,
+        confirmButtonColor: '#3085d6',
+      });
+      return;
+    }
 
     const { value: newStatus } = await Swal.fire({
       title: 'Actualizar Estado de Orden',
       text: `Estado actual: ${orderStatusLabels[order.status]}`,
       input: 'select',
       inputOptions: statusOptions,
+      inputValue: order.status, // Pre-selecciona el estado actual
       inputPlaceholder: 'Selecciona un nuevo estado',
       showCancelButton: true,
       confirmButtonText: 'Actualizar',
@@ -81,8 +120,11 @@ function OrderDetailPage() {
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#6b7280',
       inputValidator: (value) => {
-        if (!value) {
-          return 'Debes seleccionar un estado';
+        if (!value || value === order.status) {
+          return 'Debes seleccionar un estado diferente al actual';
+        }
+        if (!allowedStatuses.includes(value)) {
+          return 'Transición de estado no permitida';
         }
       }
     });
@@ -193,8 +235,8 @@ function OrderDetailPage() {
                   {orderStatusLabels[order.status] || order.status}
                 </span>
                 
-                {/* Botón de actualizar estado solo para administradores */}
-                {role === 'Administrador' && (
+                {/* Botón de actualizar estado solo para administradores y si no está en estado final */}
+                {role === 'Administrador' && !['Delivered', 'Cancelled'].includes(order.status) && (
                   <Button
                     onClick={handleUpdateStatus}
                     disabled={updatingStatus}

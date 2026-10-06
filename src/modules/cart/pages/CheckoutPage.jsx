@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useCart } from '../../cart/context/CartContext';
 import { createOrder } from '../../orders/services/createService';
+import { buildOrderPayload } from '../utils/buildOrderPayload';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import Input from '../../shared/components/Input';
@@ -35,7 +36,7 @@ function CheckoutPage() {
     setLoading(true);
 
     try {
-      // Construir dirección de envío (formato exacto del backend)
+      // Construir dirección de envío legible
       const shippingAddress = `Calle: ${formData.shippingStreet.trim()}, Altura: ${formData.shippingNumber.trim()}, Ciudad: ${formData.shippingCity.trim()}, Provincia: ${formData.shippingProvince.trim()}`;
       
       // Construir dirección de facturación
@@ -43,18 +44,13 @@ function CheckoutPage() {
         ? shippingAddress
         : `Calle: ${formData.billingStreet.trim()}, Altura: ${formData.billingNumber.trim()}, Ciudad: ${formData.billingCity.trim()}, Provincia: ${formData.billingProvince.trim()}`;
 
-      // Construir items del pedido con el nombre correcto "orderItems"
-      const orderItems = cartItems.map(item => ({
-        productId: item.id,
-        quantity: item.quantity,
-      }));
-
-      const orderData = {
+      // Centralización y estandarización mediante buildOrderPayload (SSOT)
+      const orderData = buildOrderPayload({
         shippingAddress,
         billingAddress,
-        notes: formData.notes?.trim() || '',
-        orderItems,
-      };
+        notes: formData.notes,
+        cartItems,
+      });
 
       console.log('Order data to send:', orderData);
 
@@ -75,17 +71,17 @@ function CheckoutPage() {
       await Swal.fire({
         icon: 'success',
         title: '¡Orden creada exitosamente!',
-        text: `Tu orden #${data.id?.substring(0, 8)} ha sido procesada`,
+        text: data?.id ? `Tu orden #${data.id.substring(0, 8)} ha sido procesada` : 'Tu orden ha sido procesada',
         confirmButtonText: 'Ver mis órdenes',
       });
 
-      navigate('/customer/orders');
+      navigate('/my-orders');
     } catch (err) {
       console.error('Error in checkout:', err);
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'Ocurrió un error al procesar tu orden',
+        text: err.message || 'Ocurrió un error al procesar tu orden',
       });
     } finally {
       setLoading(false);

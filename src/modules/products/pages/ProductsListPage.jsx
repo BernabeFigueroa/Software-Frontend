@@ -61,7 +61,18 @@ function ProductsListPage() {
   };
 
   const handleAddToCart = (product) => {
-    addToCart(product, 1);
+    const result = addToCart(product, 1);
+
+    if (result && !result.success) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Límite de stock',
+        text: result.message,
+        confirmButtonColor: '#7c3aed',
+      });
+      return;
+    }
+
     Swal.fire({
       icon: 'success',
       title: 'Producto agregado',
@@ -133,38 +144,55 @@ function ProductsListPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {products.map((product) => (
           <Card key={product.id} className="flex flex-col">
-            <div className="p-4 flex flex-col h-full">
-              <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
-              <p className="text-gray-600 text-sm mb-2">SKU: {product.sku}</p>
-              <p className="text-gray-700 mb-4 flex-grow">{product.description}</p>
-              
-              <div className="mt-auto">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-2xl font-bold text-green-600">
-                    ${product.currentUnitPrice.toFixed(2)}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    Stock: {product.stockQuantity}
-                  </span>
+            <div className="flex flex-col h-full">
+              {/* Imagen del producto */}
+              {product.imageUrl && (
+                <div className="w-full h-48 overflow-hidden bg-gray-100 flex items-center justify-center">
+                  <img 
+                    src={product.imageUrl} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Si la imagen falla, ocultar el contenedor
+                      e.target.parentElement.style.display = 'none';
+                    }}
+                  />
                 </div>
+              )}
+              
+              <div className="p-4 flex flex-col flex-grow">
+                <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
+                <p className="text-gray-600 text-sm mb-2">SKU: {product.sku}</p>
+                <p className="text-gray-700 mb-4 flex-grow">{product.description}</p>
                 
-                {/* Solo mostrar botón de agregar al carrito si no es administrador */}
-                {(!isAuthenticated || role !== 'Administrador') && (
-                  <Button 
-                    onClick={() => handleAddToCart(product)}
-                    className="w-full"
-                    disabled={product.stockQuantity === 0}
-                  >
-                    {product.stockQuantity > 0 ? 'Agregar al Carrito' : 'Sin Stock'}
-                  </Button>
-                )}
-                
-                {/* Mostrar mensaje informativo para administradores */}
-                {isAuthenticated && role === 'Administrador' && (
-                  <div className="text-center py-2 text-gray-600 text-sm">
-                    Vista previa de la tienda
+                <div className="mt-auto">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-2xl font-bold text-green-600">
+                      ${product.currentUnitPrice.toFixed(2)}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      Stock: {product.stockQuantity}
+                    </span>
                   </div>
-                )}
+                  
+                  {/* Solo mostrar botón de agregar al carrito si no es administrador */}
+                  {(!isAuthenticated || role !== 'Administrador') && (
+                    <Button 
+                      onClick={() => handleAddToCart(product)}
+                      className="w-full"
+                      disabled={product.stockQuantity === 0}
+                    >
+                      {product.stockQuantity > 0 ? 'Agregar al Carrito' : 'Sin Stock'}
+                    </Button>
+                  )}
+                  
+                  {/* Mostrar mensaje informativo para administradores */}
+                  {isAuthenticated && role === 'Administrador' && (
+                    <div className="text-center py-2 text-gray-600 text-sm">
+                      Vista previa de la tienda
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </Card>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import Input from '../../shared/components/Input';
 import Button from '../../shared/components/Button';
@@ -95,6 +95,15 @@ function LoginForm() {
       />
 
       <Button type='submit'>Iniciar Sesión</Button>
+      
+      <div className='flex flex-col gap-2 items-center'>
+        <p className='text-gray-600 text-sm'>¿No tienes cuenta?</p>
+        <Link to='/signup' className='w-full'>
+          <Button type='button' className='w-full bg-green-500 hover:bg-green-600'>
+            Registrarse
+          </Button>
+        </Link>
+      </div>
     </form>
   );
 };

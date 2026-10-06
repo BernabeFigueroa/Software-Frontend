@@ -16,7 +16,7 @@ function Input({ label, error = '', type = 'text', ...restProps }) {
       <label>{label}:</label>
       <div className="relative">
         <input 
-          className={`w-full ${error && 'border-red-400'} ${isPassword ? 'pr-10' : ''}`} 
+          className={`w-full border border-gray-300 rounded px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${error && 'border-red-400'} ${isPassword ? 'pr-10' : ''}`} 
           type={inputType}
           {...restProps}
         />

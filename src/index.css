@@ -7,4 +7,14 @@
   #root {
     @apply h-[100dvh];
   }
+  
+  input {
+    @apply text-black;
+    color: #000000 !important;
+  }
+  
+  input::placeholder {
+    @apply text-gray-500;
+    color: #999999 !important;
+  }
 }

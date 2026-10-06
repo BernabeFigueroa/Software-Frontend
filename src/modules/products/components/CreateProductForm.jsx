@@ -19,6 +19,7 @@ function CreateProductForm() {
       description: '',
       price: 0,
       stock: 0,
+      imageUrl: '',
     },
   });
 
@@ -190,6 +191,30 @@ function CreateProductForm() {
             },
           })}
         />
+        <Input
+          label='URL de Imagen (opcional)'
+          type='url'
+          error={errors.imageUrl?.message}
+          placeholder='https://ejemplo.com/imagen.jpg'
+          {...register('imageUrl', {
+            validate: (value) => {
+              if (value && value.trim()) {
+                // Validar que sea una URL válida con http o https
+                const urlPattern = /^https?:\/\/.+/i;
+                if (!urlPattern.test(value.trim())) {
+                  return 'Debe ser una URL válida que comience con http:// o https://';
+                }
+                if (value.length > 500) {
+                  return 'La URL no puede exceder los 500 caracteres';
+                }
+              }
+              return true;
+            },
+          })}
+        />
+        <p className="text-xs text-gray-500 -mt-3">
+          💡 Puedes usar servicios como Imgur, Picsum o URLs directas a imágenes
+        </p>
         <div className='sm:text-end'>
           <Button type='submit' className='w-full sm:w-fit'>Crear Producto</Button>
         </div>

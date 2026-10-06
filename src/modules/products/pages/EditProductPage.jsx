@@ -49,6 +49,7 @@ function EditProductPage() {
         description: data.description,
         currentUnitPrice: data.currentUnitPrice,
         stockQuantity: data.stockQuantity,
+        imageUrl: data.imageUrl || '',
       });
 
       // Guardar el estado del producto
@@ -78,6 +79,7 @@ function EditProductPage() {
         description: formData.description.trim(),
         currentUnitPrice: parseFloat(formData.currentUnitPrice),
         stockQuantity: parseInt(formData.stockQuantity),
+        imageUrl: formData.imageUrl?.trim() || null,
       };
 
       console.log('Submitting product update:', productData);
@@ -324,6 +326,32 @@ function EditProductPage() {
               error={errors.stockQuantity?.message}
             />
           </div>
+
+          {/* URL de Imagen */}
+          <Input
+            label="URL de Imagen (opcional)"
+            type="url"
+            placeholder="https://ejemplo.com/imagen.jpg"
+            {...register('imageUrl', {
+              validate: (value) => {
+                if (value && value.trim()) {
+                  // Validar que sea una URL válida con http o https
+                  const urlPattern = /^https?:\/\/.+/i;
+                  if (!urlPattern.test(value.trim())) {
+                    return 'Debe ser una URL válida que comience con http:// o https://';
+                  }
+                  if (value.length > 500) {
+                    return 'La URL no puede exceder los 500 caracteres';
+                  }
+                }
+                return true;
+              },
+            })}
+            error={errors.imageUrl?.message}
+          />
+          <p className="text-xs text-gray-500 -mt-3">
+            💡 Puedes usar servicios como Imgur, Picsum o URLs directas a imágenes
+          </p>
 
           {/* Estado del producto con información */}
           {productStatus !== null && (
