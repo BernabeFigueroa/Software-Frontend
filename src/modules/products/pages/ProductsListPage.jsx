@@ -61,7 +61,18 @@ function ProductsListPage() {
   };
 
   const handleAddToCart = (product) => {
-    addToCart(product, 1);
+    const result = addToCart(product, 1);
+
+    if (result && !result.success) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Límite de stock',
+        text: result.message,
+        confirmButtonColor: '#7c3aed',
+      });
+      return;
+    }
+
     Swal.fire({
       icon: 'success',
       title: 'Producto agregado',

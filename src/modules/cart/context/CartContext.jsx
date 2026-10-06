@@ -31,30 +31,62 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // Agregar producto al carrito
+  // Agregar producto al carrito validando stock disponible
   const addToCart = (product, quantity = 1) => {
+    const stock = Number(product.stockQuantity ?? Infinity);
+
+    if (stock <= 0) {
+      return {
+        success: false,
+        message: `El producto "${product.name}" no tiene stock disponible.`,
+      };
+    }
+
+    const existingItem = cartItems.find(item => item.id === product.id);
+    const currentQtyInCart = existingItem ? existingItem.quantity : 0;
+    const targetQuantity = currentQtyInCart + quantity;
+
+    if (targetQuantity > stock) {
+      return {
+        success: false,
+        message: `No puedes agregar más unidades. Stock disponible: ${stock} (ya tienes ${currentQtyInCart} en el carrito).`,
+      };
+    }
+
     setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
-      
       if (existingItem) {
-        // Si el producto ya existe, actualizar cantidad
         return prevItems.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: targetQuantity, stockQuantity: stock }
             : item
         );
       } else {
-        // Si es nuevo, agregarlo
-        return [...prevItems, { ...product, quantity }];
+        return [...prevItems, { ...product, quantity, stockQuantity: stock }];
       }
     });
+
+    return { success: true };
   };
 
-  // Actualizar cantidad de un producto
+  // Actualizar cantidad de un producto validando stock disponible
   const updateQuantity = (productId, quantity) => {
     if (quantity <= 0) {
       removeFromCart(productId);
-      return;
+      return { success: true };
+    }
+
+    const itemToUpdate = cartItems.find(item => item.id === productId);
+    if (!itemToUpdate) {
+      return { success: false, message: 'Producto no encontrado en el carrito.' };
+    }
+
+    const stock = Number(itemToUpdate.stockQuantity ?? Infinity);
+
+    if (quantity > stock) {
+      return {
+        success: false,
+        message: `No puedes superar el stock disponible (${stock} unidades).`,
+      };
     }
 
     setCartItems(prevItems =>
@@ -64,6 +96,8 @@ export const CartProvider = ({ children }) => {
           : item
       )
     );
+
+    return { success: true };
   };
 
   // Eliminar producto del carrito

@@ -16,7 +16,7 @@ export const getProductsAdmin = async ({
       PageSize: pageSize,
     };
 
-    const response = await instance.get('api/products/admin', { params });
+    const response = await instance.get('/api/products/admin', { params });
 
     return { data: response.data, error: null };
   } catch (error) {
@@ -40,7 +40,7 @@ export const getProductsPublic = async ({
       pageSize,
     };
 
-    const response = await instance.get('api/products', { params });
+    const response = await instance.get('/api/products', { params });
 
     return { data: response.data, error: null };
   } catch (error) {

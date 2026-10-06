@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import useAuth from '../../auth/hook/useAuth';
-import { createOrder } from '../../orders/services/createService';
 import Card from '../../shared/components/Card';
 import Button from '../../shared/components/Button';
 import LoginModal from '../../auth/components/LoginModal';
@@ -15,11 +14,18 @@ function CartPage() {
   const { cartItems, updateQuantity, removeFromCart, clearCart, getCartTotal } = useCart();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [processingOrder, setProcessingOrder] = useState(false);
 
   const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity < 1) return;
-    updateQuantity(productId, newQuantity);
+    const result = updateQuantity(productId, newQuantity);
+    if (result && !result.success) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Límite de stock',
+        text: result.message,
+        confirmButtonColor: '#7c3aed',
+      });
+    }
   };
 
   const handleRemove = (productId, productName) => {
@@ -68,7 +74,7 @@ function CartPage() {
     });
   };
 
-  const handleCheckout = async () => {
+  const handleProceedToCheckout = () => {
     if (!isAuthenticated) {
       Swal.fire({
         icon: 'info',
@@ -87,128 +93,16 @@ function CartPage() {
       return;
     }
 
-    // Si está autenticado, solicitar direcciones y crear la orden
-    const { value: formValues } = await Swal.fire({
-      title: 'Datos de Envío',
-      html:
-        '<input id="swal-shipping-street" class="swal2-input" placeholder="Calle y Número">' +
-        '<input id="swal-shipping-city" class="swal2-input" placeholder="Ciudad">' +
-        '<input id="swal-shipping-state" class="swal2-input" placeholder="Provincia">' +
-        '<input id="swal-shipping-zip" class="swal2-input" placeholder="Código Postal">' +
-        '<br><label class="swal2-checkbox"><input type="checkbox" id="swal-same-address"> Usar misma dirección para facturación</label>',
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: 'Continuar',
-      cancelButtonText: 'Cancelar',
-      preConfirm: () => {
-        return {
-          shippingStreet: document.getElementById('swal-shipping-street').value,
-          shippingCity: document.getElementById('swal-shipping-city').value,
-          shippingState: document.getElementById('swal-shipping-state').value,
-          shippingZip: document.getElementById('swal-shipping-zip').value,
-          sameAddress: document.getElementById('swal-same-address').checked,
-        };
-      },
-    });
-
-    if (!formValues) return;
-
-    const { shippingStreet, shippingCity, shippingState, shippingZip, sameAddress } = formValues;
-
-    if (!shippingStreet || !shippingCity || !shippingState || !shippingZip) {
-      Swal.fire('Error', 'Todos los campos de dirección son requeridos', 'error');
+    if (cartItems.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Carrito vacío',
+        text: 'Agrega al menos un producto al carrito antes de continuar.',
+      });
       return;
     }
 
-    let billingAddress = '';
-
-    if (!sameAddress) {
-      const { value: billingValues } = await Swal.fire({
-        title: 'Dirección de Facturación',
-        html:
-          '<input id="swal-billing-street" class="swal2-input" placeholder="Calle y Número">' +
-          '<input id="swal-billing-city" class="swal2-input" placeholder="Ciudad">' +
-          '<input id="swal-billing-state" class="swal2-input" placeholder="Provincia">' +
-          '<input id="swal-billing-zip" class="swal2-input" placeholder="Código Postal">',
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: 'Finalizar Compra',
-        cancelButtonText: 'Cancelar',
-        preConfirm: () => {
-          return {
-            billingStreet: document.getElementById('swal-billing-street').value,
-            billingCity: document.getElementById('swal-billing-city').value,
-            billingState: document.getElementById('swal-billing-state').value,
-            billingZip: document.getElementById('swal-billing-zip').value,
-          };
-        },
-      });
-
-      if (!billingValues) return;
-
-      const { billingStreet, billingCity, billingState, billingZip } = billingValues;
-
-      if (!billingStreet || !billingCity || !billingState || !billingZip) {
-        Swal.fire('Error', 'Todos los campos de dirección son requeridos', 'error');
-        return;
-      }
-
-      billingAddress = `${billingStreet}, ${billingCity}, ${billingState}, ${billingZip}`.trim();
-    }
-
-    const shippingAddress = `${shippingStreet}, ${shippingCity}, ${shippingState}, ${shippingZip}`.trim();
-
-    if (sameAddress) {
-      billingAddress = shippingAddress;
-    }
-
-    // Crear la orden
-    setProcessingOrder(true);
-    try {
-      const orderData = {
-        shippingAddress,
-        billingAddress,
-        notes: '',
-        orderItems: cartItems.map(item => ({
-          productId: item.id,
-          quantity: item.quantity,
-          unitPrice: item.currentUnitPrice,
-        })),
-      };
-
-      const { data, error } = await createOrder(orderData);
-
-      if (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error al crear la orden',
-          text: error,
-        });
-        return;
-      }
-
-      // Limpiar carrito y redirigir
-      clearCart();
-
-      await Swal.fire({
-        icon: 'success',
-        title: '¡Compra Exitosa!',
-        text: 'Tu orden ha sido creada correctamente',
-        timer: 2000,
-        showConfirmButton: false,
-      });
-
-      navigate('/');
-    } catch (error) {
-      console.error('Error creating order:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Ocurrió un error al procesar tu compra',
-      });
-    } finally {
-      setProcessingOrder(false);
-    }
+    navigate('/checkout');
   };
 
   if (cartItems.length === 0) {
@@ -253,6 +147,7 @@ function CartPage() {
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold">{item.name}</h3>
                       <p className="text-sm text-gray-600">SKU: {item.sku}</p>
+                      <p className="text-sm text-gray-500">Stock disponible: {item.stockQuantity}</p>
                       <p className="text-lg font-bold text-green-600 mt-2">
                         ${item.currentUnitPrice.toFixed(2)}
                       </p>
@@ -277,7 +172,9 @@ function CartPage() {
                         />
                         <button
                           onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                          className="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                          disabled={item.quantity >= item.stockQuantity}
+                          className="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed flex items-center justify-center"
+                          title={item.quantity >= item.stockQuantity ? 'Stock máximo alcanzado' : 'Aumentar cantidad'}
                         >
                           +
                         </button>
@@ -326,11 +223,10 @@ function CartPage() {
             </div>
 
             <Button 
-              onClick={handleCheckout}
-              disabled={processingOrder}
+              onClick={handleProceedToCheckout}
               className="w-full !bg-green-600 hover:!bg-green-700 !text-white text-lg py-3"
             >
-              {processingOrder ? 'Procesando...' : 'Finalizar Compra'}
+              Continuar al Checkout
             </Button>
 
             <Button 

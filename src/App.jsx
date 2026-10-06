@@ -13,6 +13,7 @@ import CreateProductPage from './modules/products/pages/CreateProductPage';
 import EditProductPage from './modules/products/pages/EditProductPage';
 import ProductsListPage from './modules/products/pages/ProductsListPage';
 import CartPage from './modules/cart/pages/CartPage';
+import CheckoutPage from './modules/cart/pages/CheckoutPage';
 import MyOrdersPage from './modules/orders/pages/MyOrdersPage';
 import Header from './modules/shared/components/Header';
 import Footer from './modules/shared/components/Footer';
@@ -46,6 +47,15 @@ function App() {
           // Carrito - Accesible sin login, pero requiere login para checkout
           path: '/cart',
           element: <CartPage />,
+        },
+        {
+          // Checkout - Proceso de finalización de compra
+          path: '/checkout',
+          element: (
+            <ProtectedRoute allowedRoles={['Cliente', 'Administrador']}>
+              <CheckoutPage />
+            </ProtectedRoute>
+          ),
         },
         {
           // Mis órdenes - Solo para clientes autenticados
